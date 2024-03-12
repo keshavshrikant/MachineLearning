@@ -13,6 +13,9 @@ from functools import partial
 from rouge_score import rouge_scorer
 from openai import OpenAI
 
+from local_settings.Settings import OPENAI_KEY
+os.environ['OPENAI_API_KEY'] = OPENAI_KEY
+
 class GenerateInstructions:
 
     def __init__(self, seed_tasks_path, machine_gen_instructions_path, instruction_dir):
@@ -31,12 +34,12 @@ class GenerateInstructions:
         return prompt
     
 
-    def post_process_gemma_response(self, response):
+    def post_process_gpt_response(self, response):
         pass
 
     
     def generate(self):
-        seed_instructions = [json.loads(l) for l in open(self.seed_tasks_path, "r")]
+        seed_instructions = pd.read_csv(self.seed_tasks_path)['instruction'].tolist()
         request_idx = 0
         
         machine_gen_instructions = []
@@ -57,6 +60,7 @@ class GenerateInstructions:
             prompt_instructions.extend(random.choices(machine_gen_instructions, k=2))
         
         prompt = self.create_prompt(prompt_instructions)
+        print(prompt)
         results = generate_text(self.openai_client, prompt, 
                     max_tokens=200,
                     temperature=0.7,
@@ -67,35 +71,40 @@ class GenerateInstructions:
                     n=1,
                 )
 
-        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
+        print(results)
+        # scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
 
-        instructions = []
-        all_metadata = []
-        for result in results:
-            new_instructions = self.post_process_gemma_response(result["response"])
-            instructions += new_instructions
-            all_metadata += [result] * len(new_instructions)
+        # instructions = []
+        # all_metadata = []
+        # for result in results:
+        #     new_instructions = self.post_process_gpt_response(result["response"])
+        #     instructions += new_instructions
+        #     all_metadata += [result] * len(new_instructions)
 
-        with open(os.path.join(self.instruction_dir, "machine_generated_instructions.jsonl"), "a") as fout:
+        # with open(os.path.join(self.instruction_dir, "machine_generated_instructions.jsonl"), "a") as fout:
 
-            for inst, metadata in zip(instructions, all_metadata):
-                with Pool(4) as p: 
-                    rouge_scores = p.map(partial(scorer.score, inst), prompt_instructions)
-                rouge_scores = [score["rougeL"].fmeasure for score in rouge_scores]
+        #     for inst, metadata in zip(instructions, all_metadata):
+        #         with Pool(4) as p: 
+        #             rouge_scores = p.map(partial(scorer.score, inst), prompt_instructions)
+        #         rouge_scores = [score["rougeL"].fmeasure for score in rouge_scores]
                 
-                if max(rouge_scores) > 0.7:
-                    continue
+        #         if max(rouge_scores) > 0.7:
+        #             continue
                                 
-                most_similar_instructions = {
-                        prompt_instructions[i] : rouge_scores[i] for i in np.argsort(rouge_scores)[-10:][::-1]
-                    }
-                machine_gen_instructions.append(inst)
-                fout.write(json.dumps({
-                    "instruction": inst,
-                    "most_similar": most_similar_instructions,
-                    "avg_similarity_score": float(np.mean(rouge_scores)),
-                    "metadata": metadata,
-                    "request_idx": request_idx
-                }) + "\n")
+        #         most_similar_instructions = {
+        #                 prompt_instructions[i] : rouge_scores[i] for i in np.argsort(rouge_scores)[-10:][::-1]
+        #             }
+        #         machine_gen_instructions.append(inst)
+        #         fout.write(json.dumps({
+        #             "instruction": inst,
+        #             "most_similar": most_similar_instructions,
+        #             "avg_similarity_score": float(np.mean(rouge_scores)),
+        #             "metadata": metadata,
+        #             "request_idx": request_idx
+        #         }) + "\n")
 
-            request_idx += 1
+        #     request_idx += 1
+
+if __name__ == "__main__":
+    instr = GenerateInstructions(seed_tasks_path="/Users/nisha/Documents/GitHub/MachineLearning/self_instruct/seed_instructions.csv", machine_gen_instructions_path="machine_generated_instructions.jsonl", instruction_dir=".")
+    instr.generate()

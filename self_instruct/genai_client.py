@@ -1,6 +1,7 @@
 import os
 
 from openai import OpenAI
+from openai import AuthenticationError
 from constants import WORDS_TO_IGNORE_IN_GENERATION
 
 from tenacity import (
@@ -41,7 +42,8 @@ def generate_text(openai_client, prompt,
     except (KeyError, TypeError) as e:
         print("Bad data from endpoint")
         raise e
-    
+    except AuthenticationError as e:
+        print("Token Expired, figre out how to create a new one!")
     return model_output
 
 
