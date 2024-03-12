@@ -1,0 +1,13 @@
+keras_nlp
+keras>=3
+manim==0.18.0
+ManimPango==0.5.0
+portalocker==2.8.2
+spacy
+torch
+torchdata
+torchtext
+pandas
+rouge-score
+openai
+tenacity
