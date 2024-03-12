@@ -21,9 +21,7 @@ def generate_text(openai_client, prompt,
                 presence_penalty=2,
                 stop_sequences=["\n\n", "\n16", "16.", "16 ."],                    
                 n=1):
-    
 
-    # client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", None))
 
     response = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",
