@@ -106,7 +106,7 @@ class GenerateInstructions:
 
             request_idx += 1
 
-if __name__ == "__main__":
-    instr = GenerateInstructions(seed_tasks_path="</path>", machine_gen_instructions_path="machine_generated_instructions.jsonl", instruction_dir=".")
-    for _ in range(4):
-        instr.generate()
+# if __name__ == "__main__":
+    # instr = GenerateInstructions(seed_tasks_path="</path>", machine_gen_instructions_path="machine_generated_instructions.jsonl", instruction_dir=".")
+    # for _ in range(4):
+    #     instr.generate()

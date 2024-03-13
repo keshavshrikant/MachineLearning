@@ -1,6 +1,4 @@
-*.jsonl
 /local_settings
-*.csv
 .DS_Store
 self_instruct/.DS_Store
 *.pyc

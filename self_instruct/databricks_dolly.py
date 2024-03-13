@@ -7,9 +7,7 @@ class Dolly:
 
     def read_databricks_dolly_data(self):
         features = []
-        no_context_template = "Instruction:\n{instruction}\n\nResponse:\n{response}"
-        context_template = "Instruction:\n{instruction}\n\nInput:\n{context}\n\nResponse:\n{response}"
-
+        
         with open(self.instructions_data_path, 'r') as file:
             for line in file:
                 features.append(json.loads(line))
