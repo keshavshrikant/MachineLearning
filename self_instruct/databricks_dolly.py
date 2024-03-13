@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 
-class Intructions:
+class Dolly:
     def __init__(self, instructions_data_path):
         self.instructions_data_path = instructions_data_path
 

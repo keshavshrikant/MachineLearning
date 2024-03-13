@@ -15,9 +15,9 @@ from tenacity import (
        stop=stop_after_attempt(6)
     )
 def generate_text(openai_client, prompt, 
-                max_tokens=200,
+                max_tokens=2000,
                 temperature=0.7,
-                top_p=0.5,
+                top_p=0.92,
                 frequency_penalty=0,
                 presence_penalty=2,
                 stop_sequences=["\n\n", "\n16", "16.", "16 ."],                    
@@ -32,7 +32,7 @@ def generate_text(openai_client, prompt,
         temperature=temperature,
         stop=stop_sequences,
         max_tokens=max_tokens,
-        presence_penalty=presence_penalty,
+        presence_penalty=presence_penalty,        
     )
 
     try:

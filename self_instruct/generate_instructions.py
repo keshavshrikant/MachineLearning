@@ -4,7 +4,7 @@ import random
 import json
 import os
 
-from instruction_data import Intructions
+from self_instruct.databricks_dolly import Intructions
 from constants import GENERATE_INTRUCTIONS_SYS_MSG
 from genai_client import generate_text
 
@@ -30,15 +30,21 @@ class GenerateInstructions:
         for idx, instr in enumerate(instructions):
             prompt += f"TASK {idx + 1}: {instructions[idx]}\n"
 
-        prompt += f"TASK {idx + 1}: "
+        # prompt += f"TASK {idx + 2}: "
         return prompt
     
 
     def post_process_gpt_response(self, response):
-        pass
+        instructions = []
+        responses = response.split("\n")
+        for resp in responses:
+            instructions.append(resp[resp.find(":")+1: ].strip())
+        
+        return instructions
 
     
     def generate(self):
+        
         seed_instructions = pd.read_csv(self.seed_tasks_path)['instruction'].tolist()
         request_idx = 0
         
@@ -60,9 +66,9 @@ class GenerateInstructions:
             prompt_instructions.extend(random.choices(machine_gen_instructions, k=2))
         
         prompt = self.create_prompt(prompt_instructions)
-        print(prompt)
+        # print(prompt)
         results = generate_text(self.openai_client, prompt, 
-                    max_tokens=200,
+                    max_tokens=2000,
                     temperature=0.7,
                     top_p=0.5,
                     frequency_penalty=0,
@@ -71,40 +77,36 @@ class GenerateInstructions:
                     n=1,
                 )
 
-        print(results)
-        # scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
 
-        # instructions = []
-        # all_metadata = []
-        # for result in results:
-        #     new_instructions = self.post_process_gpt_response(result["response"])
-        #     instructions += new_instructions
-        #     all_metadata += [result] * len(new_instructions)
+        
+        instructions = self.post_process_gpt_response(results)
 
-        # with open(os.path.join(self.instruction_dir, "machine_generated_instructions.jsonl"), "a") as fout:
+        with open(os.path.join(self.instruction_dir, "machine_generated_instructions.jsonl"), "a") as fout:
 
-        #     for inst, metadata in zip(instructions, all_metadata):
-        #         with Pool(4) as p: 
-        #             rouge_scores = p.map(partial(scorer.score, inst), prompt_instructions)
-        #         rouge_scores = [score["rougeL"].fmeasure for score in rouge_scores]
+            for inst in instructions:
+                with Pool(4) as p: 
+                    rouge_scores = p.map(partial(scorer.score, inst), prompt_instructions)
+                rouge_scores = [score["rougeL"].fmeasure for score in rouge_scores]
                 
-        #         if max(rouge_scores) > 0.7:
-        #             continue
+                if max(rouge_scores) > 0.7:
+                    continue
                                 
-        #         most_similar_instructions = {
-        #                 prompt_instructions[i] : rouge_scores[i] for i in np.argsort(rouge_scores)[-10:][::-1]
-        #             }
-        #         machine_gen_instructions.append(inst)
-        #         fout.write(json.dumps({
-        #             "instruction": inst,
-        #             "most_similar": most_similar_instructions,
-        #             "avg_similarity_score": float(np.mean(rouge_scores)),
-        #             "metadata": metadata,
-        #             "request_idx": request_idx
-        #         }) + "\n")
+                most_similar_instructions = {
+                        prompt_instructions[i] : rouge_scores[i] for i in np.argsort(rouge_scores)[-10:][::-1]
+                    }
+                machine_gen_instructions.append(inst)
+                fout.write(json.dumps({
+                    "instruction": inst,
+                    "most_similar": most_similar_instructions,
+                    "avg_similarity_score": float(np.mean(rouge_scores)),
+                    # "metadata": metadata,
+                    "request_idx": request_idx
+                }) + "\n")
 
-        #     request_idx += 1
+            request_idx += 1
 
 if __name__ == "__main__":
-    instr = GenerateInstructions(seed_tasks_path="/Users/nisha/Documents/GitHub/MachineLearning/self_instruct/seed_instructions.csv", machine_gen_instructions_path="machine_generated_instructions.jsonl", instruction_dir=".")
-    instr.generate()
+    instr = GenerateInstructions(seed_tasks_path="</path>", machine_gen_instructions_path="machine_generated_instructions.jsonl", instruction_dir=".")
+    for _ in range(4):
+        instr.generate()
