@@ -4,7 +4,7 @@ import random
 import json
 import os
 
-from self_instruct.databricks_dolly import Intructions
+from kaggle_gemma.databricks_dolly import Intructions
 from constants import GENERATE_INTRUCTIONS_SYS_MSG
 from genai_client import generate_text
 
